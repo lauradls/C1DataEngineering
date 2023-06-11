@@ -70,17 +70,19 @@ filingMetadata.json()['filings']['recent'].keys()
 
 ######Look up all the CIK for a specific entity by only using part of the name
 
-banks_list = ['jp morgan', 'morgan stanley', 'goldman sachs group', 'bank of america', 'wells fargo', 'citi bank', 'td bank']
+banks_list = ['jpmorgan chase', 'morgan stanley', 'goldman sachs group', 'bank of america', 'wells fargo', 'citigroup', 'toronto dominion bank']
 cik_list = []
 ticker_list = []
+lender_name = []
 
 for i in banks_list:
     out = companyData[companyData['title'].str.contains(i, case=False)]
     if out.empty:
         continue
     else:
-        cik_list.append(out.sort_values(by='ticker').iloc[0,0])
-        ticker_list.append(out.sort_values(by='ticker').iloc[0,1])
+        cik_list.append(out.iloc[0,0])
+        ticker_list.append(out.iloc[0,1])
+        lender_name.append(out.iloc[0,2])
 
 
 
@@ -104,7 +106,7 @@ from datetime import datetime
 
 
 #Define API key
-extractorApi = ExtractorApi("YOURAPI")
+extractorApi = ExtractorApi("yourAPIkey")
 
 #
 # 10-K example
@@ -158,11 +160,9 @@ df_bs = table_MN[0]
 #1st row = As of Month dd
 #2nd row = YYYY
 
-df_bs = df_bs.iloc[1::, [0, 3, 7]]
+#Select relevant columns and transpose
 
-
-#Transpose the dataframe
-df_bst = df_bs.transpose()
+df_bs = df_bs.iloc[1::, [0, 3, 7]].transpose()
 
 
 #Rename columns to match balance sheet items
@@ -198,11 +198,7 @@ df_bst = df_bst.drop(df_bst.columns[1], axis=1)
 
 
 
-####Go thorugh different CIK
-
-cik = [0000072971, 0000713676, 0000105982]#wells fargo, pnc bank
-#jp morgan chase, morgan stanley, goldman sachs
-
+####Go thorugh different CIKs from the lists above
 
 
 "https://www.sec.gov/Archives/edgar/data/1318605/000095017022006034/tsla-20220331.htm"
@@ -211,8 +207,125 @@ https://www.sec.gov/ix?doc=/Archives/edgar/data/713676/000071367623000037/pnc-20
 
 
 #get company specific filing metadata
+for cik, ticker in cik_list, ticker_list:
+    if ticker == 'MS':
+        
+        cik='0000895421'
+        ticker = 'MS'
+        for num in range(1,4):
+            url_10q = f'https://www.sec.gov/ix?doc=/Archives/edgar/data/{cik}/{cik}20000323/{ticker}q{num}202010q.htm'
+            print(ticker)
+            section_text = extractorApi.get_section(url_10q, "part1item1", "html") # 
+            table_MN1 = pd.read_html(section_text1)
+            
+            #table manipulation
+            df_loop = table_MN1[0]
+    
+    
+            #0th column = name of line items in the balance sheet
+            #1st column = empty
+            #2nd column = not valuable info
+            #3rd column = figures
+            #7th column = figures
+            
+            #1st row = As of Month dd
+            #2nd row = YYYY
+            
+            df_loop = df_bs.iloc[1::, [0, 3, 7]].transpose()
+            
+            #Rename columns to match balance sheet items
+            df_loop.columns = list(df_bs.iloc[:,0])
+            print(ticker)
+            
+            #Remove row zero as it matches column names
+            df_loop = df_loop.drop(index=0)
+            
+            
+            #Rename columns 0 as date
+            df_loop.columns.values[0] = 'Date'
+            df_loop.columns.values[1] = 'Drop'
+            
+            
+            #reset index to do a functional for loop
+            df_loop.reset_index(inplace=True, drop=True)
+            
+            #concatenate the month_day + year columns into one. Add a space so that datetime functions can recognize it. 
+            #convert to datetime obaject
+            
+            for i in range(len(df_loop.index)):
+                print(i)
+                date_string = df_loop.iloc[i,0]+' '+df_loop.iloc[i,1]
+                df_loop.iloc[i, 0] = datetime.strptime(date_string, "%B %d, %Y")
+                print(i)
+                
+            #Now that the date is in one place, drop the column that only has year information
+            df_loop = df_loop.drop(df_loop.columns[1], axis=1)
+            print(ticker)
+            df_bst.append(df_loop)
+        
+    else:
+        continue
+
+
 filingMetadata= requests.get(
     f'https://data.sec.gov/submissions/CIK{cik}.json',
     headers=headers
 )
 
+
+
+
+
+
+cik='0000895421'
+ticker = 'MS'
+for num in range(1,4):
+            url_10q = f'https://www.sec.gov/ix?doc=/Archives/edgar/data/{cik}/{cik}20000323/{ticker}q{num}202010q.htm'
+            print(ticker)
+            section_text1 = extractorApi.get_section(url_10q, "part1item1", "html") # 
+            table_MN1 = pd.read_html(section_text1)
+            
+            #table manipulation
+            df_loop = table_MN1[0]
+    
+    
+            #0th column = name of line items in the balance sheet
+            #1st column = empty
+            #2nd column = not valuable info
+            #3rd column = figures
+            #7th column = figures
+            
+            #1st row = As of Month dd
+            #2nd row = YYYY
+            
+            df_loop = df_bs.iloc[1::, [0, 3, 7]].transpose()
+            
+            #Rename columns to match balance sheet items
+            df_loop.columns = list(df_bs.iloc[:,0])
+            print(ticker)
+            
+            #Remove row zero as it matches column names
+            df_loop = df_loop.drop(index=0)
+            
+            
+            #Rename columns 0 as date
+            df_loop.columns.values[0] = 'Date'
+            df_loop.columns.values[1] = 'Drop'
+            
+            
+            #reset index to do a functional for loop
+            df_loop.reset_index(inplace=True, drop=True)
+            
+            #concatenate the month_day + year columns into one. Add a space so that datetime functions can recognize it. 
+            #convert to datetime obaject
+            
+            for i in range(len(df_loop.index)):
+                print(i)
+                date_string = df_loop.iloc[i,0]+' '+df_loop.iloc[i,1]
+                df_loop.iloc[i, 0] = datetime.strptime(date_string, "%B %d, %Y")
+                print(i)
+                
+            #Now that the date is in one place, drop the column that only has year information
+            df_loop = df_loop.drop(df_loop.columns[1], axis=1)
+            print(ticker)
+            df_bst.append(df_loop)
