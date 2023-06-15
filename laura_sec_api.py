@@ -70,13 +70,15 @@ filingMetadata.json()['filings']['recent'].keys()
 
 ######Look up all the CIK for a specific entity by only using part of the name
 
-banks_list = ['jpmorgan chase', 'morgan stanley', 'goldman sachs group', 'bank of america', 'wells fargo', 'citigroup', 'toronto dominion bank']
+# banks_list = ['jpmorgan chase', 'morgan stanley', 'goldman sachs group', 'bank of america', 'wells fargo', 'citigroup', 'toronto dominion bank']
+banks_list = ['JPM', 'MS', 'GS', 'BAC', 'WFC', 'C', 'TD']
 cik_list = []
 ticker_list = []
 lender_name = []
 
 for i in banks_list:
-    out = companyData[companyData['title'].str.contains(i, case=False)]
+    # out = companyData[companyData['title'].str.contains(i, case=False)]
+    out = companyData[companyData['ticker'] == i]
     if out.empty:
         continue
     else:
