@@ -22,7 +22,6 @@ import requests
 
 
 
-
 ########################
 #TRYING OUT SEC FREE API DATA
 #########################
@@ -124,17 +123,13 @@ for i in banks_list:
 
 
 #Define API key
-API_KEY = "8e313261bb867c7ef3affdc88a1f4b1a44fc5880c0ff8bed51043e3efb82eb23"
+API_KEY = "your_API_key"
 
 
 extractorApi = ExtractorApi(API_KEY) #Only works if statements are filled correctly
 xbrlApi = XbrlApi(API_KEY) #works with all filling formats
 
 
-
-
-
------
 
 
 ##################
@@ -166,7 +161,7 @@ def balance_sheet_df(url, ticker, cik, lender):
     
     #Update all values in the balance sheet to numeric
     ####
-    df = df.loc['Value'].applymap(pd.to_numeric)
+    #df = df.loc['Value'].applymap(pd.to_numeric)
     
     #Add ticker, cik, and lender name columns
     df['Lender'] = lender
@@ -342,7 +337,6 @@ for lender, ticker, cik in zip(lender_name, ticker_list, cik_list):
         continue
 
 
-
     #next lender
     if ticker == 'C':
         df_C = pd.DataFrame()
@@ -393,51 +387,63 @@ for lender, ticker, cik in zip(lender_name, ticker_list, cik_list):
 #This is a separate loop to add the 10-K information to each lender's dataframe. 
 #Doing it separately because the line items on the quaterly consolidated balance sheet might be different than the ones on the yearly report. 
 
-10kdate = '20201231'
+date10k = '20201231'
 
 for lender, ticker, cik in zip(lender_name, ticker_list, cik_list):
     
         #next lender
     if ticker == 'JPM':
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000019617/000001961721000236/jpm-{10kdate}.htm"
+        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000019617/000001961721000236/jpm-{date10k }.htm"
         df_JPM = df_JPM.append(balance_sheet_df(url, ticker, cik, lender))
+        continue
         
         
     if ticker == 'MS':
-        url = 'https://www.sec.gov/ix?doc=/Archives/edgar/data/0000895421/000089542121000286/ms-{10kdate}.htm'
+        url = 'https://www.sec.gov/ix?doc=/Archives/edgar/data/0000895421/000089542121000286/ms-{date10k }.htm'
         df_MS = df_MS.append(balance_sheet_df(url, ticker, cik, lender))
-        
+        continue
         
         
     if ticker == 'GS':
         url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312521049380/d39654d10k.htm"
         #df_GS = df_GS.append(balance_sheet_df(url, ticker, cik, lender))
+        continue
         
         
-        
-    if ticker == 'BAC':
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000070858/000007085821000023/bac-{10kdate}.htm"
+    if ticker == 'BAC': ##REVIEW
+        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000070858/000007085821000023/bac-{date10k}.htm"
         df_BAC = df_BAC.append(balance_sheet_df(url, ticker, cik, lender))
+        continue
         
         
-        
-    if ticker == 'WFC':
+    if ticker == 'WFC': ##REVIEW
         #10k
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297121000197/wfc-{10kdate}.htm"
+        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297121000197/wfc-{date10k}.htm"
         df_WFC = df_WFC.append(balance_sheet_df(url, ticker, cik, lender))
-        
+        continue
         
         
     if ticker == 'C':
         #10k
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000831001/000083100121000042/c-{10kdate}.htm"
+        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000831001/000083100121000042/c-{date10k}.htm"
         df_C = df_C.append(balance_sheet_df(url, ticker, cik, lender))
+        continue
         
-        
-    if ticker == 'USB':
+    if ticker == 'USB': ###REVIEW
         #10k
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000036104/000119312520286983/d947218d10q.htm"
+        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000036104/000119312521052547/d14650d10k.htm"
         df_USB = df_USB.append(balance_sheet_df(url, ticker, cik, lender))
+        continue
+    
+    
+    
+#####convert data tu numeric again.....
+
+df_list = [df_JPM, df_MS, df_GS, df_BAC, df_WFC, df_C, df_USB]
+
+
+for i in df_list:
+    i.loc[:, ~i.columns.isin(['Lender','Ticker','CIK','Date'])] = i.loc[:, ~i.columns.isin(['Lender','Ticker','CIK','Date'])].applymap(pd.to_numeric)
         
 #REVIEW: BAC, WFC, USB #### 10-K
         
@@ -456,19 +462,21 @@ columns = [
     'DateId',
     'Section',
     'CashandCashEquivalents',
-    'TradingAssetsFairValue',
-    'SecuritiesPurchased',
+    'TradingAssets',
+    'FedFundsSecuritiesPurchased',
     'SecuritiesBorrowed',
-    'LoansMaturity',
-    'LoansSale',
+    'DebtMaturity',
+    'DebtForSale',
     'LoanLossAllowance',
     'Goodwill',
     'TangibleAssets',
+    'OtherAssets',
     'TotalAssets',
     'Deposits',
     'ShortTermBorrowings',
     'LongTermBorrowings',
     'TradingLiabilities',
+    'OtherLiabilities',
     'TotalLiabilities',
     'PreferredStock',
     'CommonStock',
@@ -478,116 +486,734 @@ columns = [
     'TreasuryStock',
     'EmployeeStockComp',
     'TotalEquity',
-    'TotalLiabilitiesAndEquity'
+    'TotalLiabilitiesAndStockholdersEquity'
 ]
 
 df_final = pd.DataFrame(columns=columns)
+
+
+
 
 
 ##Organize each bank's dataframe to fit the above table's schema
 
 for ticker in ticker_list:
     
-        #next lender
+    #next lender
     if ticker == 'JPM':
-        df_JPM_final = df_cons.copy()
+        df_JPM_final = df_final.copy()
+        
+        
+        df_JPM_final[['LenderID','Ticker','CIK','DateId']] = df_JPM[['Lender', 'Ticker', 'CIK', 'Date']]
         
         #Assets
-        df_JPM_final['CashandCashEquivalents'] = df_JPM[['CashAndDueFromBanks', 'InterestBearingDepositsInBanks', 'FederalFundsSoldAndSecuritiesPurchasedUnderAgreementsToResell']].sum()
-        df_JPM_final[['LenderID','Ticker','CIK','DateId']] = df_JPM[['Lender', 'Ticker', 'CIK', 'Date']]
+        df_JPM_final['CashandCashEquivalents'] = df_JPM['CashAndDueFromBanks'] + df_JPM['InterestBearingDepositsInBanks']
+        df_JPM_final['FedFundsSecuritiesPurchased'] = df_JPM['FederalFundsSoldAndSecuritiesPurchasedUnderAgreementsToResell']
         df_JPM_final['SecuritiesBorrowed'] = df_JPM['SecuritiesBorrowed']
         df_JPM_final['Goodwill'] = df_JPM['GoodwillServicingAssetsatFairValueandOtherIntangibleAssets']
         df_JPM_final['TangibleAssets'] = df_JPM['PropertyPlantAndEquipmentNet']
-        df_JPM_final['TradingAssets'] = df_JPM['TradingAssetsFairValue']
-        df_JPM_final['SecuritiesPurchased'] = df_JPM[['AvailableForSaleSecurities',
-                                                      'DebtSecuritiesHeldToMaturityNetOfAllowanceForCreditLosses', 'DebtSecuritiesNetCarryingAmount']]
-        df_JPM_final['SecuritiesBorrowed'] = 0
-        df_JPM_final['LoansMaturity'] = df_JPM['FinancingReceivableBeforeAllowanceForCreditLossesNetofDeferredIncome']
-        df_JPM_final['LoansSale'] = 0
+        df_JPM_final['TradingAssets'] = df_JPM['TradingAssets'] + df_JPM['AvailableForSaleSecuritiesDebtSecurities']
+        df_JPM_final['DebtForSale'] = df_JPM['DebtSecuritiesNetCarryingAmount'] + df_JPM['FinancingReceivableBeforeAllowanceForCreditLossesNetofDeferredIncome']
+        df_JPM_final['DebtMaturity'] = df_JPM['DebtSecuritiesHeldToMaturityNetOfAllowanceForCreditLosses']
         df_JPM_final['LoanLossAllowance'] = df_JPM['FinancingReceivableAllowanceForCreditLosses']
-        df_JPM_final['OtherAssets'] = df_JPM[['OtherAssets', 'NotesReceivableNet', 'AccruedInterestAndAccountsReceivable']]
+        df_JPM_final['OtherAssets'] = df_JPM['OtherAssets'] + df_JPM['NotesReceivableNet'] + df_JPM['AccruedInterestAndAccountsReceivable']
         df_JPM_final['TotalAssets'] = df_JPM['Assets']
         
         #Liabilities
         df_JPM_final['Deposits'] = df_JPM['Deposits']
-        df_JPM_final['ShortTermBorrowings'] = df_JPM['FederalFundsPurchasedSecuritiesSoldUnderAgreementsToRepurchase',
-                    'ShortTermBorrowings']
+        df_JPM_final['ShortTermBorrowings'] = df_JPM['FederalFundsPurchasedSecuritiesSoldUnderAgreementsToRepurchase'] + df_JPM['ShortTermBorrowings']
         df_JPM_final['LongTermBorrowings'] = df_JPM ['LongTermDebtAndCapitalLeaseObligationsIncludingCurrentMaturities']
         df_JPM_final['TradingLiabilities'] = df_JPM['TradingLiabilities']
         df_JPM_final['OtherLiabilities'] = df_JPM['OtherLiabilities']
         
         #Equity
         df_JPM_final['PreferredStock'] = df_JPM['PreferredStockIncludingAdditionalPaidInCapitalNetOfDiscount']
-        df_JPM_final['CommonStock'] = df_JPM['CommonStockValue', 'AdditionalPaidInCapitalCommonStock']
-        df_JPM_final['AdditionalPaidInCapital'] = df_JPM['AdditionalPaidInCapitalCommonStock', 'PreferredStockIncludingAdditionalPaidInCapitalNetOfDiscount']
-        df_JPM_final['RetainedEarnings'] = df_JPM['RetainedEarningsAccumulatedDeficit', 'EmployeeStockComp']
+        df_JPM_final['CommonStock'] = df_JPM['CommonStockValue'] + df_JPM['AdditionalPaidInCapitalCommonStock']
+        df_JPM_final['AdditionalPaidInCapital'] = df_JPM['AdditionalPaidInCapitalCommonStock']
+        df_JPM_final['RetainedEarnings'] = df_JPM['RetainedEarningsAccumulatedDeficit']
         df_JPM_final['AccCompIncomeLoss'] = df_JPM['AccumulatedOtherComprehensiveIncomeLossNetOfTax']
-        df_JPM_final['TreasuryStock'] = df_JPM['CommonStockHeldInTrust', 'TreasuryStockValue']
+        df_JPM_final['TreasuryStock'] = df_JPM['CommonStockHeldInTrust'] + df_JPM['TreasuryStockValue']
         df_JPM_final['TotalEquity'] = df_JPM['StockholdersEquity']
-        df_JPM_final['TotalLiabilitiesAndEquity'] = df_JPM['LiabilitiesAndStockholdersEquity']
-
-
-# Print the DataFrame
-print(df_JPM)
-
+        df_JPM_final['TotalLiabilitiesAndStockholdersEquity'] = df_JPM['LiabilitiesAndStockholdersEquity']
         
-
-        df_JPM_cons
-        
-        
+        continue
+    
+    #next lender
     if ticker == 'MS':
-        url = 'https://www.sec.gov/ix?doc=/Archives/edgar/data/0000895421/000089542121000286/ms-{10kdate}.htm'
-        df_MS = df_MS.append(balance_sheet_df(url, ticker, cik, lender))
+        df_MS_final = df_final.copy()
         
+        df_MS_final[['LenderID','Ticker','CIK','DateId']] = df_MS[['Lender', 'Ticker', 'CIK', 'Date']]
+
+        # Assets
+        df_MS_final['CashandCashEquivalents'] = df_MS['CashAndCashEquivalentsAtCarryingValue']
+        df_MS_final['TradingAssets'] = df_MS['TradingAssetsFairValueDisclosure']
+        df_MS_final['FedFundsSecuritiesPurchased'] = df_MS['SecuritiesPurchasedUnderAgreementsToResell']
+        df_MS_final['SecuritiesBorrowed'] = df_MS['SecuritiesBorrowed']
+        df_MS_final['DebtMaturity'] = df_MS['DebtSecuritiesAvailableForSaleAndHeldToMaturity'] 
+        df_MS_final['DebtForSale'] = df_MS['LoansReceivableHeldForSaleNetNotPartOfDisposalGroup'] + df_MS['LoansHeldforInvestment']
+        df_MS_final['Goodwill'] = df_MS['Goodwill']
+        df_MS_final['OtherAssets'] = df_MS['OtherReceivables'] + df_MS['OtherAssets']
+        df_MS_final['TotalAssets'] = df_MS['Assets']
         
+        #Liabilities
+        df_MS_final['Deposits'] = df_MS['Deposits']
+        df_MS_final['ShortTermBorrowings'] = df_MS['SecuritiesSoldUnderAgreementsToRepurchase']
+        df_MS_final['LongTermBorrowings'] = df_MS['DebtLongtermAndShorttermCombinedAmount'] - df_MS_final['ShortTermBorrowings']
+        #df_MS_final['TradingLiabilities'] = df_MS['TradingLiabilities']
+        df_MS_final['TotalLiabilities'] = df_MS['Liabilities']
         
+        #Equity
+        df_MS_final['PreferredStock'] = df_MS['PreferredStockCarryingValue']
+        df_MS_final['CommonStock'] = df_MS['CommonStockValue']
+        df_MS_final['AdditionalPaidInCapital'] = df_MS['AdditionalPaidInCapital']
+        df_MS_final['RetainedEarnings'] = df_MS['RetainedEarningsAccumulatedDeficit']
+        df_MS_final['AccCompIncomeLoss'] = df_MS['AccumulatedOtherComprehensiveIncomeLossNetOfTax']
+        df_MS_final['TreasuryStock'] = df_MS['TreasuryStockValue']
+        df_MS_final['EmployeeStockComp'] = df_MS['CapitalAccumulationPlans']
+        df_MS_final['TotalEquity'] = df_MS['StockholdersEquity']
+        df_MS_final['TotalLiabilitiesAndStockholdersEquity'] = df_MS['LiabilitiesAndStockholdersEquity']
+        
+        continue
+    
+    #next lender
     if ticker == 'GS':
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312521049380/d39654d10k.htm"
-        #df_GS = df_GS.append(balance_sheet_df(url, ticker, cik, lender))
+        df_GS_final = df_final.copy()
         
+        df_GS_final[['LenderID','Ticker','CIK','DateId']] = df_GS[['Lender', 'Ticker', 'CIK', 'Date']]
+
+        #Assets
+        df_GS_final['CashandCashEquivalents'] = df_GS['CashAndCashEquivalentsAtCarryingValue']
+        df_GS_final['TradingAssets'] = df_GS['TradingAssetsIncludingPledge'] + df_GS['InvestmentIncludingPledge']
+        df_GS_final['SecuritiesBorrowed'] = df_GS['SecuritiesBorrowed']
+        df_GS_final['DebtForSale'] = df_GS['LoansAndLeasesReceivableNetReportedAmount']
+        #df_GS_final['LoanLossAllowance'] = df_GS['LoanLossAllowance']
+        #df_GS_final['Goodwill'] = df_GS['Goodwill']
+        #df_GS_final['TangibleAssets'] = df_GS['TangibleAssets']
+        df_GS_final['OtherAssets'] = df_GS['CustomerAndOtherReceivables'] + df_GS['OtherAssets']
+        df_GS_final['TotalAssets'] = df_GS['Assets']
         
+        #Liabilities
+        df_GS_final['Deposits'] = df_GS['Deposits']
+        df_GS_final['ShortTermBorrowings'] = df_GS['SecuritiesSoldUnderAgreementsToRepurchase'] +  df_GS['UnsecuredShortTermBorrowingsIncludingCurrentPortionOfUnsecuredLongTermBorrowings'] - df_GS['UnsecuredLongTermDebt']
+        df_GS_final['LongTermBorrowings'] = df_GS['UnsecuredLongTermDebt']
+        df_GS_final['TradingLiabilities'] = df_GS['TradingLiabilities']
+        df_GS_final['TotalLiabilities'] = df_GS['Liabilities']
         
+        #Equity
+        df_GS_final['PreferredStock'] = df_GS['CommonStockValue']
+        df_GS_final['CommonStock'] = df_GS['CommonStockValue'] + df_GS['NonvotingCommonStock']
+        df_GS_final['AdditionalPaidInCapital'] = df_GS['AdditionalPaidInCapital']
+        df_GS_final['RetainedEarnings'] = df_GS['RetainedEarningsAccumulatedDeficit']
+        df_GS_final['AccCompIncomeLoss'] = df_GS['AccumulatedOtherComprehensiveIncomeLossNetOfTax']
+        df_GS_final['TreasuryStock'] = df_GS['TreasuryStockValue']
+        df_GS_final['EmployeeStockComp'] = df_GS['ShareBasedAwards']
+        df_GS_final['TotalEquity'] = df_GS['StockholdersEquity']
+        df_GS_final['TotalLiabilitiesAndStockholdersEquity'] = df_GS['LiabilitiesAndStockholdersEquity']
+        
+        continue
+
+
+    #next lender
     if ticker == 'BAC':
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000070858/000007085821000023/bac-{10kdate}.htm"
-        df_BAC = df_BAC.append(balance_sheet_df(url, ticker, cik, lender))
+        df_BAC_final = df_final.copy()
+        
+        df_BAC_final[['LenderID','Ticker','CIK','DateId']] = df_BAC[['Lender', 'Ticker', 'CIK', 'Date']]
+
+        # Assets
+        df_BAC_final['CashandCashEquivalents'] = df_BAC['CashAndDueFromBanks'] + df_BAC['InterestBearingDepositsInBanks'] + df_BAC['CashAndCashEquivalentsAtCarryingValue']# + df_BAC['CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents']
+        df_BAC_final['TradingAssets'] = df_BAC['TradingSecurities'] + df_BAC['DerivativeAssets']
+        df_BAC_final['FedFundsSecuritiesPurchased'] = df_BAC['FederalFundsSoldAndSecuritiesPurchasedUnderAgreementsToResell'] + df_BAC['MarketableSecurities']
+        df_BAC_final['DebtMaturity'] = df_BAC['DebtSecuritiesHeldToMaturityNetOfAllowanceForCreditLosses']
+        df_BAC_final['DebtForSale'] = df_BAC['LoansReceivableHeldForSaleNetNotPartOfDisposalGroup'] + df_BAC['DebtSecuritiesCarriedAtFairValue'] + df_BAC['LoansAndLeasesReceivableNetReportedAmount']
+        df_BAC_final['LoanLossAllowance'] = df_BAC['LoansAndLeasesReceivableAllowance'] 
+        df_BAC_final['Goodwill'] = df_BAC['Goodwill']
+        df_BAC_final['TangibleAssets'] = df_BAC['PropertyPlantAndEquipmentNet']
+        df_BAC_final['OtherAssets'] = df_BAC['TimeDepositsAndOtherShortTermInvestments'] + df_BAC['OtherReceivables'] + df_BAC['OtherAssets']
+        df_BAC_final['TotalAssets'] = df_BAC['Assets']
+        
+        #Liabilities
+        df_BAC_final['Deposits'] = df_BAC['Deposits']
+        df_BAC_final['ShortTermBorrowings'] = df_BAC['FederalFundsPurchasedAndSecuritiesSoldUnderAgreementsToRepurchase'] + df_BAC['OtherShortTermBorrowings']
+        df_BAC_final['LongTermBorrowings'] = df_BAC['LongTermDebt']
+        df_BAC_final['TradingLiabilities'] = df_BAC['TradingLiabilities']
+        df_BAC_final['TotalLiabilities'] = df_BAC['Liabilities']
+        
+        #Equity
+        df_BAC_final['PreferredStock'] = df_BAC['PreferredStockRedeemableandNonRedeemableValue']
+        df_BAC_final['CommonStock'] = df_BAC['CommonStocksIncludingAdditionalPaidInCapital'] #includes additional paid-in-capital
+        df_BAC_final['AdditionalPaidInCapital'] = df_BAC['CommonStocksIncludingAdditionalPaidInCapital']
+        df_BAC_final['RetainedEarnings'] = df_BAC['RetainedEarningsAccumulatedDeficit']
+        df_BAC_final['AccCompIncomeLoss'] = df_BAC['AccumulatedOtherComprehensiveIncomeLossNetOfTax']
+        df_BAC_final['TotalEquity'] = df_BAC['StockholdersEquity']
+        df_BAC_final['TotalLiabilitiesAndStockholdersEquity'] = df_BAC['LiabilitiesAndStockholdersEquity']
         
         
-        
+        continue
+    
+
+    #next lender
     if ticker == 'WFC':
-        #10k
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297121000197/wfc-{10kdate}.htm"
-        df_WFC = df_WFC.append(balance_sheet_df(url, ticker, cik, lender))
+        df_WFC_final = df_final.copy()
         
+        df_WFC_final[['LenderID','Ticker','CIK','DateId']] = df_WFC[['Lender', 'Ticker', 'CIK', 'Date']]
+
+        # Assets
+        df_WFC_final['CashandCashEquivalents'] = df_WFC['CashAndDueFromBanks'] + df_WFC['InterestBearingDepositsInBanks'] + df_WFC['CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents']
+        df_WFC_final['TradingAssets'] = df_WFC['TradingSecuritiesDebt'] + df_WFC['AvailableForSaleSecuritiesDebtSecurities']
+        df_WFC_final['FedFundsSecuritiesPurchased'] = df_WFC['FederalFundsSoldSecuritiesPurchasedUnderResaleAgreementsOtherShortTermInvestments']
+        df_WFC_final['DebtMaturity'] = df_WFC['HeldToMaturitySecurities'] + df_WFC['DebtSecuritiesHeldToMaturityAmortizedCostAfterAllowanceForCreditLoss']
+        df_WFC_final['DebtForSale'] = df_WFC['LoansReceivableHeldForSaleNetNotPartOfDisposalGroup'] + df_WFC['LoansAndLeasesReceivableNetReportedAmount']
+        df_WFC_final['LoanLossAllowance'] = df_WFC['LoansAndLeasesReceivableAllowance']
+        df_WFC_final['Goodwill'] = df_WFC['Goodwill']
+        df_WFC_final['TangibleAssets'] = df_WFC['PropertyPlantAndEquipmentNet'] + df_WFC['PropertyPlantAndEquipmentAndFinanceLeaseRightOfUseAssetAfterAccumulatedDepreciationAndAmortization']
+        df_WFC_final['OtherAssets'] = df_WFC['ServicingAssetAtFairValueAmount'] + df_WFC['ServicingAssetAtAmortizedValue'] + df_WFC['EquitySecuritiesFvNiAndWithoutReadilyDeterminableFairValue'] + df_WFC['OtherAssets'] + df_WFC['ServicingAsset']
+        df_WFC_final['TotalAssets'] = df_WFC['Assets']
         
+        #Liabilities
+        df_WFC_final['Deposits'] = df_WFC['Deposits']
+        df_WFC_final['ShortTermBorrowings'] = df_WFC['ShortTermBorrowings']
+        df_WFC_final['LongTermBorrowings'] = df_WFC['LongTermDebt']
+        df_WFC_final['TradingLiabilities'] = df_WFC['DerivativeLiabilities']
+        df_WFC_final['TotalLiabilities'] = df_WFC['Liabilities']
         
+        #Equity
+        df_WFC_final['PreferredStock'] = df_WFC['PreferredStockValue']
+        df_WFC_final['CommonStock'] = df_WFC['CommonStockValue']
+        df_WFC_final['AdditionalPaidInCapital'] = df_WFC['AdditionalPaidInCapital']
+        df_WFC_final['RetainedEarnings'] = df_WFC['RetainedEarningsAccumulatedDeficit']
+        df_WFC_final['AccCompIncomeLoss'] = df_WFC['AccumulatedOtherComprehensiveIncomeLossNetOfTax']
+        df_WFC_final['TreasuryStock'] = df_WFC['TreasuryStockValue']
+        df_WFC_final['TotalEquity'] = df_WFC['StockholdersEquity']
+        df_WFC_final['TotalLiabilitiesAndStockholdersEquity'] = df_WFC['LiabilitiesAndStockholdersEquity']
+        
+        continue
+    
+     #next lender
     if ticker == 'C':
-        #10k
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000831001/000083100121000042/c-{10kdate}.htm"
-        df_C = df_C.append(balance_sheet_df(url, ticker, cik, lender))
+        df_C_final = df_final.copy()
         
+        df_C_final[['LenderID','Ticker','CIK','DateId']] = df_C[['Lender', 'Ticker', 'CIK', 'Date']]
+
+        # Assets
+        df_C_final['CashandCashEquivalents'] = df_C['CashAndDueFromBanks'] + df_C['InterestBearingDepositsInBanks']
+        df_C_final['TradingAssets'] = df_C['BrokerageReceivables'] + df_C['TradingSecurities']
+        df_C_final['SecuritiesBorrowed'] = df_C['CarryingValueOfFederalFundsSoldSecuritiesPurchasedUnderAgreementsToResellAndDepositsPaidForSecuritiesBorrowed']
+        df_C_final['FedFundsSecuritiesPurchased'] = df_C['CarryingValueOfFederalFundsSoldSecuritiesPurchasedUnderAgreementsToResellAndDepositsPaidForSecuritiesBorrowed']
+        df_C_final['DebtMaturity'] = df_C['DebtSecuritiesHeldToMaturityNetOfAllowanceForCreditLosses']
+        df_C_final['DebtForSale'] = df_C['AvailableForSaleSecuritiesDebtSecurities']
+        df_C_final['LoanLossAllowance'] = df_C['FinancingReceivableAllowanceForCreditLosses']
+        df_C_final['Goodwill'] = df_C['Goodwill']
+        df_C_final['OtherAssets'] = df_C['IntangibleAssetsNetExcludingGoodwill'] + df_C['NotesReceivableGross'] + df_C['OtherAssets']
+        df_C_final['TotalAssets'] = df_C['Assets']
         
+        #Liabialities
+        df_C_final['Deposits'] = df_C['Deposits']
+        df_C_final['ShortTermBorrowings'] = df_C['CarryingValueOfFederalFundsPurchasedSecuritiesSoldUnderAgreementsToRepurchaseAndDepositsReceivedForSecuritiesLoaned'] + df_C['ShortTermBorrowings']
+        df_C_final['LongTermBorrowings'] = df_C['LongTermDebt']
+        df_C_final['TradingLiabilities'] = df_C['TradingLiabilities']
+        df_C_final['TotalLiabilities'] = df_C['Liabilities']
+        
+        #Equity
+        df_C_final['PreferredStock'] = df_C['PreferredStockValue']
+        df_C_final['CommonStock'] = df_C['CommonStockValue']
+        df_C_final['AdditionalPaidInCapital'] = df_C['AdditionalPaidInCapital']
+        df_C_final['RetainedEarnings'] = df_C['RetainedEarningsAccumulatedDeficit']
+        df_C_final['AccCompIncomeLoss'] = df_C['AccumulatedOtherComprehensiveIncomeLossNetOfTax']
+        df_C_final['TreasuryStock'] = df_C['TreasuryStockValue']
+        df_C_final['TotalEquity'] = df_C['StockholdersEquity']
+        df_C_final['TotalLiabilitiesAndStockholdersEquity'] = df_C['LiabilitiesAndStockholdersEquity']
+        
+        continue
+    
+        
+     #next lender
     if ticker == 'USB':
-        #10k
-        url = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000036104/000119312520286983/d947218d10q.htm"
-        df_USB = df_USB.append(balance_sheet_df(url, ticker, cik, lender))
+        df_USB_final = df_final.copy()
         
+        df_USB_final[['LenderID','Ticker','CIK','DateId']] = df_USB[['Lender', 'Ticker', 'CIK', 'Date']]       
+        
+        
+        # Assets
+        df_USB_final['CashandCashEquivalents'] = df_USB['CashAndDueFromBanks']
+        #df_USB_final['TradingAssets'] = df_USB['TradingSecuritiesDebt']
+        #df_USB_final['FedFundsSecuritiesPurchased'] = df_USB[['FederalFundsSoldSecuritiesPurchasedUnderResaleAgreementsOtherShortTermInvestments']].sum()
+        #df_USB_final['SecuritiesBorrowed'] = df_USB['SecuritiesBorrowed']
+        ##df_USB_final['DebtMaturity'] = df_USB['DebtSecuritiesHeldtomaturityNetofAllowanceForCreditLosses']
+        df_USB_final['DebtForSale'] = df_USB['LoansReceivableHeldForSaleNetNotPartOfDisposalGroup'] + df_USB['LoansAndLeasesReceivableNetReportedAmount'] + df_USB['AvailableForSaleSecuritiesDebtSecurities']
+        df_USB_final['LoanLossAllowance'] = df_USB['LoansAndLeasesReceivableAllowance']
+        df_USB_final['Goodwill'] = df_USB['Goodwill']
+        df_USB_final['TangibleAssets'] = df_USB['PropertyPlantAndEquipmentNet']
+        df_USB_final['OtherAssets'] = df_USB['NotesReceivableGross'] + df_USB['OtherAssets']
+        df_USB_final['TotalAssets'] = df_USB['Assets']
+        
+        #Liabilities
+        df_USB_final['Deposits'] = df_USB['Deposits']
+        df_USB_final['ShortTermBorrowings'] = df_USB['ShortTermBorrowings']
+        df_USB_final['LongTermBorrowings'] = df_USB['LongTermDebt']
+        #df_USB_final['TradingLiabilities'] = df_USB['DerivativeLiabilities']
+        df_USB_final['TotalLiabilities'] = df_USB['Liabilities']
+        
+        #Equity
+        df_USB_final['PreferredStock'] = df_USB['PreferredStockIncludingAdditionalPaidInCapitalNetOfDiscount']
+        df_USB_final['CommonStock'] = df_USB['CommonStockValue']
+        df_USB_final['AdditionalPaidInCapital'] = df_USB['AdditionalPaidInCapitalCommonStock']
+        df_USB_final['RetainedEarnings'] = df_USB['RetainedEarningsAccumulatedDeficit']
+        df_USB_final['AccCompIncomeLoss'] = df_USB['AccumulatedOtherComprehensiveIncomeLossNetOfTax']
+        df_USB_final['TreasuryStock'] = df_USB['TreasuryStockCommonValue']
+        df_USB_final['TotalEquity'] = df_USB['StockholdersEquity']
+        df_USB_final['TotalLiabilitiesAndStockholdersEquity'] = df_USB['LiabilitiesAndStockholdersEquity']
+
+        continue
+
+######Concatenate all the final dataframes
 
 
-#333#######3333
-##############3
+frames = [df_JPM_final, df_MS_final, df_GS_final, df_BAC_final, df_WFC_final, df_C_final, df_USB_final]
+factBalanceSheet_dbtable = pd.concat(frames)
 
 
-df_bs_final = pd.DataFrame()
+####Ensure that the values in the final dataframe are actually numbers
+factBalanceSheet_dbtable.iloc[:, 5:] = factBalanceSheet_dbtable.iloc[:, 5:].applymap(lambda x: x.item() if isinstance(x, np.ndarray) else x)
+######
+
+##########################
+#Turn files into .CSV 
+##########################
+
+
+csv_df_JPM = df_JPM.to_csv(index=False, header=True)#.encode('utf-8')
+csv_df_GS = df_GS.to_csv(index=False, header=True)#.encode('utf-8')
+csv_df_MS = df_MS.to_csv(index=False, header=True)#.encode('utf-8')
+csv_df_BAC = df_BAC.to_csv(index=False, header=True)#.encode('utf-8')
+csv_df_WFC = df_WFC.to_csv(index=False, header=True)#.encode('utf-8')
+csv_df_C = df_C.to_csv(index=False, header=True)#.encode('utf-8')
+csv_df_USB = df_USB.to_csv(index=False, header=True)#.encode('utf-8')
+csv_df_final = factBalanceSheet_dbtable.to_csv(index=False, header=True)#.encode('utf-8')
 
 
 
-df_JPM.loc['Value'] = pd.to_numeric(df_JPM.loc['Value'])
+names = ['df_JPM', 'df_MS', 'df_GS', 'df_BAC', 'df_WFC', 'df_C', 'df_USB', 'factBalanceSheet_dbtable']  
 
 
-    df.loc['Value'] = pd.to_numeric(df.loc['Value'], errors='coerce')
-    df.dropna(subset=['Value'], inplace=True)
+dataframes = [csv_df_JPM,
+csv_df_GS,
+csv_df_MS, 
+csv_df_BAC,
+csv_df_WFC,
+csv_df_C,
+csv_df_USB,
+csv_df_final]
 
-    df.loc['Value'] = pd.to_numeric(df.loc['Value'])
+
+
+##########################
+##UPLOAD TO AZURE BLOB####
+##########################
+
+from azure.storage.blob import BlobServiceClient
+
+# The storage account name and access key Berzaf gave
+storage_account_name = "pppdatastorage"
+storage_account_key = "yourkey"
+azure_sas_token1 ='yourtoken'
+azure_storage_connection_string = 'connectionstring'
+azure_storage_container = 'pppdata'
+
+
+########
+########
+
+
+
+
+########
+########
+
+
+# Connecting to the storage account
+conn_str = f"DefaultEndpointsProtocol=https;AccountName={storage_account_name};AccountKey={storage_account_key};EndpointSuffix=core.windows.net"
+
+
+blob_service_client = BlobServiceClient.from_connection_string(conn_str)
+
+
+
+# Connect to Azure Storage
+blob_service_client = BlobServiceClient.from_connection_string(azure_storage_connection_string)
+container_client = blob_service_client.get_container_client(azure_storage_container)
+
+# Enable string logging
+options = {
+    'Azure-Storage-Log-String-To-Sign': 'true'
+}
+
+# List the containers
+containers = blob_service_client.list_containers(logging_enable=options)
+
+# Iterate through the containers
+for container in containers:
+    # Retrieve and print the string to sign for each container
+    string_to_sign = container.response.headers['x-ms-string-to-sign']
+    print("String to sign:", string_to_sign)
+
+
+
+# The container name
+container_name = "pppdata"
+
+# Create a reference to the storage container
+container_space = blob_service_client.get_container_client(container_name)
+
+
+# Uploading the DataFrame as a blob to the container
+for data, name in zip(dataframes, names):
+    # Uploading the file to the container
+    container_space.upload_blob(data=data, name=name)
+    
+    
+#
+## Upload the updated content as a blob, overwriting the existing blob
+#container_client.upload_blob(name=blob_name, data=updated_data, overwrite=True)
+#container_space.upload_blob(name='factBalanceSheet_dbtable', data=csv_df_final, overwrite=True)
+    
+    
+##################################
+##UPLOAD TABLE TO SNOWFLAKE DB####
+##################################
+    
+    
+#Snowflake connection details
+snowflake_account = 'acct'
+snowflake_user = ''
+snowflake_password = ''
+snowflake_database = 'PPP_LOAN_DB'
+snowflake_schema = 'PPP_STAGING_DATA'
+snowflake_warehouse= 'TEAM24DE_WH'
+
+
+
+
+##Establish the connection
+
+conn = snowflake.connector.connect(user=snowflake_user,
+                                   password=snowflake_password,
+                                   account=snowflake_account,
+                                   warehouse = snowflake_warehouse,
+                                   database=snowflake_database,
+                                   schema = snowflake_schema,
+                                   azure_sas_token=azure_sas_token1)
+
+# Create cursor
+
+cursor = conn.cursor()
+
+#Create Tables
+
+create_balancesheet_table_query = '''
+CREATE TABLE IF NOT EXISTS factbalancesheettable (
+    LenderID TEXT,
+    Ticker VARCHAR(3),
+    CIK INTEGER,
+    DateId DATE,
+    Section TEXT,
+    CashandCashEquivalents NUMERIC,
+    TradingAssets NUMERIC,
+    FedFundsSecuritiesPurchased NUMERIC,
+    SecuritiesBorrowed NUMERIC,
+    DebtMaturity NUMERIC,
+    DebtForSale NUMERIC,
+    LoanLossAllowance NUMERIC,
+    Goodwill NUMERIC,
+    TangibleAssets NUMERIC,
+    OtherAssets NUMERIC,
+    TotalAssets NUMERIC,
+    Deposits NUMERIC,
+    ShortTermBorrowings NUMERIC,
+    LongTermBorrowings NUMERIC,
+    TradingLiabilities NUMERIC,
+    OtherLiabilities NUMERIC,
+    TotalLiabilities NUMERIC,
+    PreferredStock NUMERIC,
+    CommonStock NUMERIC,
+    AdditionalPaidInCapital NUMERIC,
+    RetainedEarnings NUMERIC,
+    AccCompIncomeLoss NUMERIC,
+    TreasuryStock NUMERIC,
+    EmployeeStockComp NUMERIC,
+    TotalEquity NUMERIC,
+    TotalLiabilitiesAndStockholdersEquity NUMERIC
+);
+'''
+
+#Execute the SQL statement to create the table
+cursor.execute("USE SCHEMA PPP_STAGING_DATA")
+
+cursor.execute(create_balancesheet_table_query)
+
+#delete a table in snowflake
+#cursor.execute('''DROP TABLE IF EXISTS factbalancesheet;''')
+
+
+##Create Azure Stage
+url = f'azure://{storage_account_name}.blob.core.windows.net/{container_name}/'
+
+# Define the SQL statement
+create_azureblob_stage_query = '''
+CREATE STAGE myazurestagefinal4
+  URL = 'azure://pppdatastorage.blob.core.windows.net/pppdata'
+  CREDENTIALS = (
+    AZURE_SAS_TOKEN = 'sastoken'
+  );
+'''
+  #FILE_FORMAT = my_csv_format
+
+####error with my csv format now
+
+try:
+    # Execute the SQL statement
+    cursor.execute(create_azureblob_stage_query)
+
+    # Commit the changes (if necessary)
+    conn.commit()
+
+    print("Stage created successfully!")
+except snowflake.connector.Error as e:
+    # Handle any errors that occurred during execution
+    print("Error:", e)
+
+
+#RESUME
+alter_warehouse = '''
+ALTER WAREHOUSE TEAM24DE_WH RESUME;
+'''
+
+cursor.execute(alter_warehouse)
+
+##Load into Snoflake database from Azure blob
+
+copyrecords_azure_snowflake = '''
+COPY INTO factbalancesheettable
+FROM @myazurestagefinal4
+FILES = ('factBalanceSheet_dbtable')
+ON_ERROR = 'CONTINUE';
+'''
+
+
+#  PATTERN='.*factBalanceSheet*.csv'
+  
+  
+cursor.execute(copyrecords_azure_snowflake)
+
+# Commit the changes (if necessary)
+conn.commit()
+
+
+
+#######################
+
+
+
+###LOADING THE DATA INTO SNOWFLAKE
+# Azure Storage container details
+azure_storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=pppdatastorage;AccountKey=b4UhnaSHwcv1Tm7MNL0lYCaC6BLMh2T1A5EjU4fgHxltuPg2jCeIPZXgjcIDohKHjtKQe9Qegbso+ASto63eZA==;EndpointSuffix=core.windows.net'
+azure_storage_container = 'pppdata'
+
+
+# Snowflake connection details
+snowflake_account = ''
+snowflake_user = ''
+snowflake_password = ''
+snowflake_database = 'PPP_LOAN_DB'
+snowflake_schema = 'PPP_STAGING_DATA'
+snowflake_warehouse= 'The_PPP_Loan_Pro_WH'
+snowflake_table='factbalancesheettable'
+
+
+# Connect to Azure Storage
+blob_service_client = BlobServiceClient.from_connection_string(azure_storage_connection_string)
+container_client = blob_service_client.get_container_client(azure_storage_container)
+
+
+# Download the CSV file from Azure Storage
+csv_file_name = 'factBalanceSheet_dbtable'
+
+blob_client = container_client.get_blob_client(csv_file_name)
+downloaded_blob = blob_client.download_blob()
+csv_data = downloaded_blob.content_as_text()
+
+# Convert CSV data to a list of dictionaries
+csv_data_lines = csv_data.split("\n")
+csv_reader = csv.DictReader(csv_data_lines)
+data = [dict(row) for row in csv_reader]
+#print(data)
+
+# Connect to Snowflake
+conn = snowflake.connector.connect(
+    user=snowflake_user,
+    password=snowflake_password,
+    account=snowflake_account,
+    database=snowflake_database,
+    schema=snowflake_schema,
+    warehouse=snowflake_warehouse
+)
+    user=snowflake_user,
+    password=snowflake_password,
+    account=snowflake_account,
+    database=snowflake_database,
+    schema=snowflake_schema,
+    warehouse=snowflake_warehouse)
+
+
+# Create a cursor to execute SQL statements
+cursor = conn.cursor()
+
+# Set the current schema
+set_schema_sql = f"USE SCHEMA {snowflake_schema}"
+cursor.execute(set_schema_sql)
+
+# Create a warehouse in Snowflake
+# create_warehouse_sql = f'''
+#     CREATE WAREHOUSE IF NOT EXISTS {snowflake_warehouse}
+#     WITH WAREHOUSE_SIZE = 'X-Small'
+#     AUTO_SUSPEND = 600
+#     AUTO_RESUME = TRUE
+#     COMMENT = 'The PPP Loan WH'
+# '''
+# cursor.execute(create_warehouse_sql)
+
+
+# Insert CSV data from Azure into Snowflake table
+insert_sql = f"INSERT INTO {snowflake_table} VALUES (%s,%s, %s, %s,%s,%s, %s, %s,%s, %s, %s,%s, %s,%s,%s,%s,%s,%s,%s, %s, %s,%s, %s, %s,%s, %s,%s,%s,%s,%s,%s)"
+for row in data:
+    cursor.execute(insert_sql, (
+        row['LenderID'],
+        row['Ticker'],
+        row['CIK'],
+        row['DateId'],
+        row['Section'] if row['Section'] != '' else None,
+        row['CashandCashEquivalents'],
+        row['TradingAssets'],
+        row['FedFundsSecuritiesPurchased'],
+        row['SecuritiesBorrowed'],
+        row['DebtMaturity'],
+        row['DebtForSale'],
+        row['LoanLossAllowance'],
+        row['Goodwill'],
+        row['TangibleAssets'],
+        row['OtherAssets'] if row['OtherAssets'] != '' else None,
+        row['TotalAssets'],
+        row['Deposits'],
+        row['ShortTermBorrowings'],
+        row['LongTermBorrowings'],
+        row['TradingLiabilities'],
+        row['OtherLiabilities'] if row['OtherLiabilities'] != '' else None,
+        row['TotalLiabilities'],
+        row['PreferredStock'],
+        row['CommonStock'],
+        row['AdditionalPaidInCapital'],
+        row['RetainedEarnings'],
+        row['AccCompIncomeLoss'],
+        row['TreasuryStock'],
+        row['EmployeeStockComp'],
+        row['TotalEquity'],
+        row['TotalLiabilitiesAndStockholdersEquity']
+    ))
+
+    
+
+# Commit the transaction
+conn.commit()
+
+# Close the cursor and connection
+cursor.close()
+conn.close()
+
+
+  
+####example from class
+
+#INSERT INTO IF FOR SMALLER CHUNKS OF DATA, COPY INTO NORMALLY USED WHEN THINGS ARE STORED
+# file_stock = open('data/stocks/stocks_data.csv')
+# contents = csv.reader(file_stock)
+
+# insert_records = "INSERT INTO stocks (date, open_price, highest_price, lowest_price, close_price, volume, symbol) VALUES(?, ?, ?, ?, ?, ?, ?)"
+ 
+# # Importing the contents of the file
+# # into our person table
+# cursor.executemany(insert_records, contents)
+  
+  
+###############
+#DELETE A STAGE AZURE/SNOWFLAKE -below
+###############
+
+# drop_stage_query = "DROP STAGE IF EXISTS my_bsazure_stage;"
+
+# try:
+#     # Execute the SQL statement to drop the stage
+#     cursor.execute(drop_stage_query)
+
+#     # Commit the changes (if necessary)
+#     conn.commit()
+
+#     print("Stage deleted successfully!")
+# except snowflake.connector.Error as e:
+#     # Handle any errors that occurred during execution
+#     print("Error:", e)
+
+###############
+#DELETE A STAGE AZURE/SNOWFLAKE - above
+###############
+
+###Test if it worked, if the data was uploaded
+cursor.execute("SELECT * FROM factBalanceSheet")
+
+# Example: Fetch all rows returned by the query
+rows = cursor.fetchall()
+#rows = cursor.execute(select_all).fetchall()
+
+
+
+# Example: Loop through the rows and print the data
+for row in rows:
+    print(row)
+    
+    
+
+#Commit the changes to the databas
+
+conn.commit()
+
+#Close the database connection
+cursor.close()
+conn.close()
+# Execute SQL statement
+
+
+
+
+
+    
+
+
+     
+
+
+# #333#######3333
+# ##############3
+
+
+# df_bs_final = pd.DataFrame()
+
+
+
+# df_JPM.loc['Value'] = pd.to_numeric(df_JPM.loc['Value'])
+
+
+#     df.loc['Value'] = pd.to_numeric(df.loc['Value'], errors='coerce')
+#     df.dropna(subset=['Value'], inplace=True)
+
+#     df.loc['Value'] = pd.to_numeric(df.loc['Value'])
 
 
 
@@ -595,108 +1221,108 @@ df_JPM.loc['Value'] = pd.to_numeric(df_JPM.loc['Value'])
 #TRANSFORMATIONS FOR WHEN OTHER WORKED
 ########
         
-                for num in range(1,3):
-            url_10q = f'https://www.sec.gov/ix?doc=/Archives/edgar/data/{cik}/{cik}20000323/{ticker}q{num}202010q.htm'
-            print(ticker)
-            section_text = extractorApi.get_section(url_10q, "part1item1", "html") # 
-            table_MN1 = pd.read_html(section_text1)
+#                 for num in range(1,3):
+#             url_10q = f'https://www.sec.gov/ix?doc=/Archives/edgar/data/{cik}/{cik}20000323/{ticker}q{num}202010q.htm'
+#             print(ticker)
+#             section_text = extractorApi.get_section(url_10q, "part1item1", "html") # 
+#             table_MN1 = pd.read_html(section_text1)
             
-            #table manipulation
-            df_loop = table_MN1[0]
+#             #table manipulation
+#             df_loop = table_MN1[0]
     
     
-            #0th column = name of line items in the balance sheet
-            #1st column = empty
-            #2nd column = not valuable info
-            #3rd column = figures
-            #7th column = figures
+#             #0th column = name of line items in the balance sheet
+#             #1st column = empty
+#             #2nd column = not valuable info
+#             #3rd column = figures
+#             #7th column = figures
             
-            #1st row = As of Month dd
-            #2nd row = YYYY
+#             #1st row = As of Month dd
+#             #2nd row = YYYY
             
-            df_loop = df_bs.iloc[1::, [0, 3, 7]].transpose()
+#             df_loop = df_bs.iloc[1::, [0, 3, 7]].transpose()
             
-            #Rename columns to match balance sheet items
-            df_loop.columns = list(df_bs.iloc[:,0])
-            print(ticker)
+#             #Rename columns to match balance sheet items
+#             df_loop.columns = list(df_bs.iloc[:,0])
+#             print(ticker)
             
-            #Remove row zero as it matches column names
-            df_loop = df_loop.drop(index=0)
-            
-            
-            #Rename columns 0 as date
-            df_loop.columns.values[0] = 'Date'
-            df_loop.columns.values[1] = 'Drop'
+#             #Remove row zero as it matches column names
+#             df_loop = df_loop.drop(index=0)
             
             
-            #reset index to do a functional for loop
-            df_loop.reset_index(inplace=True, drop=True)
+#             #Rename columns 0 as date
+#             df_loop.columns.values[0] = 'Date'
+#             df_loop.columns.values[1] = 'Drop'
             
-            #concatenate the month_day + year columns into one. Add a space so that datetime functions can recognize it. 
-            #convert to datetime obaject
             
-            for i in range(len(df_loop.index)):
-                print(i)
-                date_string = df_loop.iloc[i,0]+' '+df_loop.iloc[i,1]
-                df_loop.iloc[i, 0] = datetime.strptime(date_string, "%B %d, %Y")
-                print(i)
+#             #reset index to do a functional for loop
+#             df_loop.reset_index(inplace=True, drop=True)
+            
+#             #concatenate the month_day + year columns into one. Add a space so that datetime functions can recognize it. 
+#             #convert to datetime obaject
+            
+#             for i in range(len(df_loop.index)):
+#                 print(i)
+#                 date_string = df_loop.iloc[i,0]+' '+df_loop.iloc[i,1]
+#                 df_loop.iloc[i, 0] = datetime.strptime(date_string, "%B %d, %Y")
+#                 print(i)
                 
-            #Now that the date is in one place, drop the column that only has year information
-            df_loop = df_loop.drop(df_loop.columns[1], axis=1)
-            print(ticker)
-            df_bst.append(df_loop)
+#             #Now that the date is in one place, drop the column that only has year information
+#             df_loop = df_loop.drop(df_loop.columns[1], axis=1)
+#             print(ticker)
+#             df_bst.append(df_loop)
         
-    else:
-        continue
+#     else:
+#         continue
         
 
 
 
 
-#dictionary to dataframe, every key (company) should be a row so use orient = index
+# #dictionary to dataframe, every key (company) should be a row so use orient = index
 
-companyData = pd.DataFrame.from_dict(companyTickers.json(), orient='index')
-companyData.describe()
-
-
-######GS ##works well
-
-gs_url =    "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312520282987/d25996d10q.htm" #q3
-gs_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312520129324/d907802d10q.htm"
-gs_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312520212201/d920934d10q.htm"
-gs_url_10k = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312521049380/d39654d10k.htm" 
+# companyData = pd.DataFrame.from_dict(companyTickers.json(), orient='index')
+# companyData.describe()
 
 
+# ######GS ##works well
 
-###gs with xbrl
-
-####BAC
-bac_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000070858/000007085820000023/bac-0331202010xq.htm"
-bac_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000070858/000007085820000040/bac-0630202010xq.htm"
-bac_url_q3 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000070858/000007085820000071/bac-20200930.htm"
-
-
-####WELLS FARGO
-wf_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297120000338/wfc-20200930.htm"
-
-wf_url_q3 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297120000338/wfc-20200930.htm"
-wf_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297120000288/wfc-0630x2020x10q.htm"
-wf_url_q1 ="https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297120000236/wfc-0331x2020x10q.htm"
-
-
-###Citigroup
-
-citi_url_q3 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000831001/000083100120000110/c-20200930.htm"
-citi_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000831001/000083100120000078/c-20200630.htm"
-citi_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000831001/000083100120000044/c-3312020x10q.htm"
+# gs_url =    "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312520282987/d25996d10q.htm" #q3
+# gs_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312520129324/d907802d10q.htm"
+# gs_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312520212201/d920934d10q.htm"
+# gs_url_10k = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000886982/000119312521049380/d39654d10k.htm" 
 
 
 
-##US Bancorp
+# ###gs with xbrl
 
-usb_url_q3 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000036104/000119312520286983/d947218d10q.htm"
-usb_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000036104/000119312520211979/d890129d10q.htm"
-usb_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000036104/000119312520136359/d897119d10q.htm"
+# ####BAC
+# bac_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000070858/000007085820000023/bac-0331202010xq.htm"
+# bac_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000070858/000007085820000040/bac-0630202010xq.htm"
+# bac_url_q3 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000070858/000007085820000071/bac-20200930.htm"
+
+
+# ####WELLS FARGO
+# wf_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297120000338/wfc-20200930.htm"
+
+# wf_url_q3 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297120000338/wfc-20200930.htm"
+# wf_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297120000288/wfc-0630x2020x10q.htm"
+# wf_url_q1 ="https://www.sec.gov/ix?doc=/Archives/edgar/data/0000072971/000007297120000236/wfc-0331x2020x10q.htm"
+
+
+# ###Citigroup
+
+# citi_url_q3 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000831001/000083100120000110/c-20200930.htm"
+# citi_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000831001/000083100120000078/c-20200630.htm"
+# citi_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000831001/000083100120000044/c-3312020x10q.htm"
+
+
+
+# ##US Bancorp
+
+# usb_url_q3 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000036104/000119312520286983/d947218d10q.htm"
+# usb_url_q2 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000036104/000119312520211979/d890129d10q.htm"
+# usb_url_q1 = "https://www.sec.gov/ix?doc=/Archives/edgar/data/0000036104/000119312520136359/d897119d10q.htm"
 
 
 
